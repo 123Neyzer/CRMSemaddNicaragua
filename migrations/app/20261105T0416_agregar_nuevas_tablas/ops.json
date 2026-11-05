@@ -1,0 +1,985 @@
+[
+  {
+    "id": "table.client",
+    "label": "Create table client",
+    "summary": "Creates table client with required columns",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "table",
+        "name": "client"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"client\" does not exist",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "client"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"client\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"client\"",
+        "sql": "CREATE TABLE \"client\" (\n  \"classification\" TEXT NOT NULL,\n  \"createdAt\" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  \"empresaId\" INTEGER NOT NULL,\n  \"fullName\" TEXT NOT NULL,\n  \"id\" INTEGER PRIMARY KEY AUTOINCREMENT,\n  \"summary\" TEXT NOT NULL,\n  \"telephone\" TEXT NOT NULL,\n  \"updatedAt\" TEXT NOT NULL,\n  FOREIGN KEY (\"empresaId\") REFERENCES \"enterprise\" (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"client\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "client"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"client\""
+        }
+      },
+      {
+        "description": "verify table \"client\" has exactly its columns",
+        "sql": "SELECT (SELECT COUNT(*) FROM pragma_table_info('client')) = 8 AND (SELECT COUNT(*) FROM pragma_table_info('client') WHERE (name, LOWER(type), \"notnull\", pk) IN (VALUES ('classification', 'text', 1, 0), ('createdAt', 'text', 1, 0), ('empresaId', 'integer', 1, 0), ('fullName', 'text', 1, 0), ('id', 'integer', 0, 1), ('summary', 'text', 1, 0), ('telephone', 'text', 1, 0), ('updatedAt', 'text', 1, 0))) = 8"
+      }
+    ]
+  },
+  {
+    "id": "table.conversation",
+    "label": "Create table conversation",
+    "summary": "Creates table conversation with required columns",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "table",
+        "name": "conversation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"conversation\" does not exist",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "conversation"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"conversation\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"conversation\"",
+        "sql": "CREATE TABLE \"conversation\" (\n  \"canal\" TEXT NOT NULL,\n  \"clientId\" INTEGER NOT NULL,\n  \"createdAt\" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  \"enterpriseId\" INTEGER NOT NULL,\n  \"id\" INTEGER PRIMARY KEY AUTOINCREMENT,\n  \"message\" TEXT NOT NULL,\n  \"state\" INTEGER NOT NULL DEFAULT 1,\n  \"updatedAt\" TEXT NOT NULL,\n  \"userId\" INTEGER NOT NULL,\n  FOREIGN KEY (\"clientId\") REFERENCES \"client\" (\"id\"),\n  FOREIGN KEY (\"userId\") REFERENCES \"users\" (\"id\"),\n  FOREIGN KEY (\"enterpriseId\") REFERENCES \"enterprise\" (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"conversation\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "conversation"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"conversation\""
+        }
+      },
+      {
+        "description": "verify table \"conversation\" has exactly its columns",
+        "sql": "SELECT (SELECT COUNT(*) FROM pragma_table_info('conversation')) = 9 AND (SELECT COUNT(*) FROM pragma_table_info('conversation') WHERE (name, LOWER(type), \"notnull\", pk) IN (VALUES ('canal', 'text', 1, 0), ('clientId', 'integer', 1, 0), ('createdAt', 'text', 1, 0), ('enterpriseId', 'integer', 1, 0), ('id', 'integer', 0, 1), ('message', 'text', 1, 0), ('state', 'integer', 1, 0), ('updatedAt', 'text', 1, 0), ('userId', 'integer', 1, 0))) = 9"
+      }
+    ]
+  },
+  {
+    "id": "table.detailconversation",
+    "label": "Create table detailconversation",
+    "summary": "Creates table detailconversation with required columns",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "table",
+        "name": "detailconversation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"detailconversation\" does not exist",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "detailconversation"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"detailconversation\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"detailconversation\"",
+        "sql": "CREATE TABLE \"detailconversation\" (\n  \"content\" TEXT NOT NULL,\n  \"conversationId\" INTEGER NOT NULL,\n  \"createdAt\" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  \"id\" INTEGER PRIMARY KEY AUTOINCREMENT,\n  \"message\" TEXT NOT NULL,\n  \"state\" INTEGER NOT NULL DEFAULT 1,\n  \"typeagent\" TEXT NOT NULL,\n  \"updatedAt\" TEXT NOT NULL,\n  \"userenterpriseId\" INTEGER NOT NULL,\n  FOREIGN KEY (\"userenterpriseId\") REFERENCES \"userenterprise\" (\"id\"),\n  FOREIGN KEY (\"conversationId\") REFERENCES \"conversation\" (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"detailconversation\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "detailconversation"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"detailconversation\""
+        }
+      },
+      {
+        "description": "verify table \"detailconversation\" has exactly its columns",
+        "sql": "SELECT (SELECT COUNT(*) FROM pragma_table_info('detailconversation')) = 9 AND (SELECT COUNT(*) FROM pragma_table_info('detailconversation') WHERE (name, LOWER(type), \"notnull\", pk) IN (VALUES ('content', 'text', 1, 0), ('conversationId', 'integer', 1, 0), ('createdAt', 'text', 1, 0), ('id', 'integer', 0, 1), ('message', 'text', 1, 0), ('state', 'integer', 1, 0), ('typeagent', 'text', 1, 0), ('updatedAt', 'text', 1, 0), ('userenterpriseId', 'integer', 1, 0))) = 9"
+      }
+    ]
+  },
+  {
+    "id": "table.enterprise",
+    "label": "Create table enterprise",
+    "summary": "Creates table enterprise with required columns",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "table",
+        "name": "enterprise"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"enterprise\" does not exist",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "enterprise"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"enterprise\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"enterprise\"",
+        "sql": "CREATE TABLE \"enterprise\" (\n  \"country\" TEXT NOT NULL,\n  \"createdAt\" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  \"id\" INTEGER PRIMARY KEY AUTOINCREMENT,\n  \"nameenterprise\" TEXT NOT NULL,\n  \"state\" INTEGER NOT NULL DEFAULT 1,\n  \"updatedAt\" TEXT NOT NULL,\n  \"userId\" INTEGER NOT NULL,\n  FOREIGN KEY (\"userId\") REFERENCES \"users\" (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"enterprise\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "enterprise"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"enterprise\""
+        }
+      },
+      {
+        "description": "verify table \"enterprise\" has exactly its columns",
+        "sql": "SELECT (SELECT COUNT(*) FROM pragma_table_info('enterprise')) = 7 AND (SELECT COUNT(*) FROM pragma_table_info('enterprise') WHERE (name, LOWER(type), \"notnull\", pk) IN (VALUES ('country', 'text', 1, 0), ('createdAt', 'text', 1, 0), ('id', 'integer', 0, 1), ('nameenterprise', 'text', 1, 0), ('state', 'integer', 1, 0), ('updatedAt', 'text', 1, 0), ('userId', 'integer', 1, 0))) = 7"
+      }
+    ]
+  },
+  {
+    "id": "table.task",
+    "label": "Create table task",
+    "summary": "Creates table task with required columns",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "table",
+        "name": "task"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"task\" does not exist",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "task"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"task\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"task\"",
+        "sql": "CREATE TABLE \"task\" (\n  \"clientId\" INTEGER NOT NULL,\n  \"createdAt\" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  \"description\" TEXT NOT NULL,\n  \"fechadeVencimiento\" TEXT NOT NULL,\n  \"id\" INTEGER PRIMARY KEY AUTOINCREMENT,\n  \"priority\" TEXT NOT NULL DEFAULT 'media',\n  \"state\" INTEGER NOT NULL DEFAULT 1,\n  \"title\" TEXT NOT NULL,\n  \"updatedAt\" TEXT NOT NULL,\n  \"userenterpriseId\" INTEGER NOT NULL,\n  FOREIGN KEY (\"clientId\") REFERENCES \"client\" (\"id\"),\n  FOREIGN KEY (\"userenterpriseId\") REFERENCES \"userenterprise\" (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"task\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "task"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"task\""
+        }
+      },
+      {
+        "description": "verify table \"task\" has exactly its columns",
+        "sql": "SELECT (SELECT COUNT(*) FROM pragma_table_info('task')) = 10 AND (SELECT COUNT(*) FROM pragma_table_info('task') WHERE (name, LOWER(type), \"notnull\", pk) IN (VALUES ('clientId', 'integer', 1, 0), ('createdAt', 'text', 1, 0), ('description', 'text', 1, 0), ('fechadeVencimiento', 'text', 1, 0), ('id', 'integer', 0, 1), ('priority', 'text', 1, 0), ('state', 'integer', 1, 0), ('title', 'text', 1, 0), ('updatedAt', 'text', 1, 0), ('userenterpriseId', 'integer', 1, 0))) = 10"
+      }
+    ]
+  },
+  {
+    "id": "table.userenterprise",
+    "label": "Create table userenterprise",
+    "summary": "Creates table userenterprise with required columns",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "table",
+        "name": "userenterprise"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"userenterprise\" does not exist",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "userenterprise"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"userenterprise\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"userenterprise\"",
+        "sql": "CREATE TABLE \"userenterprise\" (\n  \"createdAt\" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  \"email\" TEXT NOT NULL,\n  \"enterpriseId\" INTEGER NOT NULL,\n  \"fullName\" TEXT NOT NULL,\n  \"id\" INTEGER PRIMARY KEY AUTOINCREMENT,\n  \"password\" TEXT NOT NULL,\n  \"role\" TEXT NOT NULL DEFAULT 'agente',\n  \"state\" INTEGER NOT NULL DEFAULT 1,\n  \"updatedAt\" TEXT NOT NULL,\n  \"userId\" INTEGER NOT NULL,\n  \"username\" TEXT NOT NULL,\n  FOREIGN KEY (\"userId\") REFERENCES \"users\" (\"id\"),\n  FOREIGN KEY (\"enterpriseId\") REFERENCES \"enterprise\" (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"userenterprise\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "userenterprise"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"userenterprise\""
+        }
+      },
+      {
+        "description": "verify table \"userenterprise\" has exactly its columns",
+        "sql": "SELECT (SELECT COUNT(*) FROM pragma_table_info('userenterprise')) = 11 AND (SELECT COUNT(*) FROM pragma_table_info('userenterprise') WHERE (name, LOWER(type), \"notnull\", pk) IN (VALUES ('createdAt', 'text', 1, 0), ('email', 'text', 1, 0), ('enterpriseId', 'integer', 1, 0), ('fullName', 'text', 1, 0), ('id', 'integer', 0, 1), ('password', 'text', 1, 0), ('role', 'text', 1, 0), ('state', 'integer', 1, 0), ('updatedAt', 'text', 1, 0), ('userId', 'integer', 1, 0), ('username', 'text', 1, 0))) = 11"
+      }
+    ]
+  },
+  {
+    "id": "table.users",
+    "label": "Create table users",
+    "summary": "Creates table users with required columns",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "table",
+        "name": "users"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"users\" does not exist",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "users"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"users\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"users\"",
+        "sql": "CREATE TABLE \"users\" (\n  \"createdAt\" TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  \"email\" TEXT NOT NULL,\n  \"id\" INTEGER PRIMARY KEY AUTOINCREMENT,\n  \"name\" TEXT NOT NULL,\n  \"password\" TEXT NOT NULL,\n  \"role\" TEXT NOT NULL DEFAULT 'admin',\n  \"state\" INTEGER NOT NULL DEFAULT 1,\n  \"updatedAt\" TEXT NOT NULL,\n  UNIQUE (\"email\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"users\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "users"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"users\""
+        }
+      },
+      {
+        "description": "verify table \"users\" has exactly its columns",
+        "sql": "SELECT (SELECT COUNT(*) FROM pragma_table_info('users')) = 8 AND (SELECT COUNT(*) FROM pragma_table_info('users') WHERE (name, LOWER(type), \"notnull\", pk) IN (VALUES ('createdAt', 'text', 1, 0), ('email', 'text', 1, 0), ('id', 'integer', 0, 1), ('name', 'text', 1, 0), ('password', 'text', 1, 0), ('role', 'text', 1, 0), ('state', 'integer', 1, 0), ('updatedAt', 'text', 1, 0))) = 8"
+      }
+    ]
+  },
+  {
+    "id": "index.client.client_empresaId_idx_2ace4994",
+    "label": "Create index client_empresaId_idx_2ace4994 on client",
+    "summary": "Creates index client_empresaId_idx_2ace4994 on client",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "index",
+        "name": "client_empresaId_idx_2ace4994",
+        "table": "client"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"client_empresaId_idx_2ace4994\" is missing",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "client_empresaId_idx_2ace4994"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"client_empresaId_idx_2ace4994\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"client_empresaId_idx_2ace4994\"",
+        "sql": "CREATE INDEX \"client_empresaId_idx_2ace4994\" ON \"client\" (\"empresaId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"client_empresaId_idx_2ace4994\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "client_empresaId_idx_2ace4994"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "index \"client_empresaId_idx_2ace4994\""
+        }
+      },
+      {
+        "description": "verify index \"client_empresaId_idx_2ace4994\" on \"client\" covers (empresaId)",
+        "sql": "SELECT EXISTS (SELECT 1 FROM pragma_index_list('client') WHERE name = 'client_empresaId_idx_2ace4994' AND \"unique\" = 0) AND (SELECT COUNT(*) FROM pragma_index_info('client_empresaId_idx_2ace4994')) = 1 AND (SELECT COUNT(*) FROM pragma_index_info('client_empresaId_idx_2ace4994') WHERE (seqno, name) IN (VALUES (0, 'empresaId'))) = 1"
+      }
+    ]
+  },
+  {
+    "id": "index.conversation.conversation_clientId_idx_153a9a49",
+    "label": "Create index conversation_clientId_idx_153a9a49 on conversation",
+    "summary": "Creates index conversation_clientId_idx_153a9a49 on conversation",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "index",
+        "name": "conversation_clientId_idx_153a9a49",
+        "table": "conversation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"conversation_clientId_idx_153a9a49\" is missing",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "conversation_clientId_idx_153a9a49"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"conversation_clientId_idx_153a9a49\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"conversation_clientId_idx_153a9a49\"",
+        "sql": "CREATE INDEX \"conversation_clientId_idx_153a9a49\" ON \"conversation\" (\"clientId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"conversation_clientId_idx_153a9a49\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "conversation_clientId_idx_153a9a49"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "index \"conversation_clientId_idx_153a9a49\""
+        }
+      },
+      {
+        "description": "verify index \"conversation_clientId_idx_153a9a49\" on \"conversation\" covers (clientId)",
+        "sql": "SELECT EXISTS (SELECT 1 FROM pragma_index_list('conversation') WHERE name = 'conversation_clientId_idx_153a9a49' AND \"unique\" = 0) AND (SELECT COUNT(*) FROM pragma_index_info('conversation_clientId_idx_153a9a49')) = 1 AND (SELECT COUNT(*) FROM pragma_index_info('conversation_clientId_idx_153a9a49') WHERE (seqno, name) IN (VALUES (0, 'clientId'))) = 1"
+      }
+    ]
+  },
+  {
+    "id": "index.conversation.conversation_enterpriseId_idx_c87d438a",
+    "label": "Create index conversation_enterpriseId_idx_c87d438a on conversation",
+    "summary": "Creates index conversation_enterpriseId_idx_c87d438a on conversation",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "index",
+        "name": "conversation_enterpriseId_idx_c87d438a",
+        "table": "conversation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"conversation_enterpriseId_idx_c87d438a\" is missing",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "conversation_enterpriseId_idx_c87d438a"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"conversation_enterpriseId_idx_c87d438a\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"conversation_enterpriseId_idx_c87d438a\"",
+        "sql": "CREATE INDEX \"conversation_enterpriseId_idx_c87d438a\" ON \"conversation\" (\"enterpriseId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"conversation_enterpriseId_idx_c87d438a\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "conversation_enterpriseId_idx_c87d438a"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "index \"conversation_enterpriseId_idx_c87d438a\""
+        }
+      },
+      {
+        "description": "verify index \"conversation_enterpriseId_idx_c87d438a\" on \"conversation\" covers (enterpriseId)",
+        "sql": "SELECT EXISTS (SELECT 1 FROM pragma_index_list('conversation') WHERE name = 'conversation_enterpriseId_idx_c87d438a' AND \"unique\" = 0) AND (SELECT COUNT(*) FROM pragma_index_info('conversation_enterpriseId_idx_c87d438a')) = 1 AND (SELECT COUNT(*) FROM pragma_index_info('conversation_enterpriseId_idx_c87d438a') WHERE (seqno, name) IN (VALUES (0, 'enterpriseId'))) = 1"
+      }
+    ]
+  },
+  {
+    "id": "index.conversation.conversation_userId_idx_a489d58a",
+    "label": "Create index conversation_userId_idx_a489d58a on conversation",
+    "summary": "Creates index conversation_userId_idx_a489d58a on conversation",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "index",
+        "name": "conversation_userId_idx_a489d58a",
+        "table": "conversation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"conversation_userId_idx_a489d58a\" is missing",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "conversation_userId_idx_a489d58a"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"conversation_userId_idx_a489d58a\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"conversation_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"conversation_userId_idx_a489d58a\" ON \"conversation\" (\"userId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"conversation_userId_idx_a489d58a\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "conversation_userId_idx_a489d58a"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "index \"conversation_userId_idx_a489d58a\""
+        }
+      },
+      {
+        "description": "verify index \"conversation_userId_idx_a489d58a\" on \"conversation\" covers (userId)",
+        "sql": "SELECT EXISTS (SELECT 1 FROM pragma_index_list('conversation') WHERE name = 'conversation_userId_idx_a489d58a' AND \"unique\" = 0) AND (SELECT COUNT(*) FROM pragma_index_info('conversation_userId_idx_a489d58a')) = 1 AND (SELECT COUNT(*) FROM pragma_index_info('conversation_userId_idx_a489d58a') WHERE (seqno, name) IN (VALUES (0, 'userId'))) = 1"
+      }
+    ]
+  },
+  {
+    "id": "index.detailconversation.detailconversation_conversationId_idx_669215a6",
+    "label": "Create index detailconversation_conversationId_idx_669215a6 on detailconversation",
+    "summary": "Creates index detailconversation_conversationId_idx_669215a6 on detailconversation",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "index",
+        "name": "detailconversation_conversationId_idx_669215a6",
+        "table": "detailconversation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"detailconversation_conversationId_idx_669215a6\" is missing",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "detailconversation_conversationId_idx_669215a6"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"detailconversation_conversationId_idx_669215a6\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"detailconversation_conversationId_idx_669215a6\"",
+        "sql": "CREATE INDEX \"detailconversation_conversationId_idx_669215a6\" ON \"detailconversation\" (\"conversationId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"detailconversation_conversationId_idx_669215a6\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "detailconversation_conversationId_idx_669215a6"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "index \"detailconversation_conversationId_idx_669215a6\""
+        }
+      },
+      {
+        "description": "verify index \"detailconversation_conversationId_idx_669215a6\" on \"detailconversation\" covers (conversationId)",
+        "sql": "SELECT EXISTS (SELECT 1 FROM pragma_index_list('detailconversation') WHERE name = 'detailconversation_conversationId_idx_669215a6' AND \"unique\" = 0) AND (SELECT COUNT(*) FROM pragma_index_info('detailconversation_conversationId_idx_669215a6')) = 1 AND (SELECT COUNT(*) FROM pragma_index_info('detailconversation_conversationId_idx_669215a6') WHERE (seqno, name) IN (VALUES (0, 'conversationId'))) = 1"
+      }
+    ]
+  },
+  {
+    "id": "index.detailconversation.detailconversation_userenterpriseId_idx_1aebc431",
+    "label": "Create index detailconversation_userenterpriseId_idx_1aebc431 on detailconversation",
+    "summary": "Creates index detailconversation_userenterpriseId_idx_1aebc431 on detailconversation",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "index",
+        "name": "detailconversation_userenterpriseId_idx_1aebc431",
+        "table": "detailconversation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"detailconversation_userenterpriseId_idx_1aebc431\" is missing",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "detailconversation_userenterpriseId_idx_1aebc431"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"detailconversation_userenterpriseId_idx_1aebc431\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"detailconversation_userenterpriseId_idx_1aebc431\"",
+        "sql": "CREATE INDEX \"detailconversation_userenterpriseId_idx_1aebc431\" ON \"detailconversation\" (\"userenterpriseId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"detailconversation_userenterpriseId_idx_1aebc431\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "detailconversation_userenterpriseId_idx_1aebc431"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "index \"detailconversation_userenterpriseId_idx_1aebc431\""
+        }
+      },
+      {
+        "description": "verify index \"detailconversation_userenterpriseId_idx_1aebc431\" on \"detailconversation\" covers (userenterpriseId)",
+        "sql": "SELECT EXISTS (SELECT 1 FROM pragma_index_list('detailconversation') WHERE name = 'detailconversation_userenterpriseId_idx_1aebc431' AND \"unique\" = 0) AND (SELECT COUNT(*) FROM pragma_index_info('detailconversation_userenterpriseId_idx_1aebc431')) = 1 AND (SELECT COUNT(*) FROM pragma_index_info('detailconversation_userenterpriseId_idx_1aebc431') WHERE (seqno, name) IN (VALUES (0, 'userenterpriseId'))) = 1"
+      }
+    ]
+  },
+  {
+    "id": "index.enterprise.enterprise_userId_idx_a489d58a",
+    "label": "Create index enterprise_userId_idx_a489d58a on enterprise",
+    "summary": "Creates index enterprise_userId_idx_a489d58a on enterprise",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "index",
+        "name": "enterprise_userId_idx_a489d58a",
+        "table": "enterprise"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"enterprise_userId_idx_a489d58a\" is missing",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "enterprise_userId_idx_a489d58a"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"enterprise_userId_idx_a489d58a\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"enterprise_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"enterprise_userId_idx_a489d58a\" ON \"enterprise\" (\"userId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"enterprise_userId_idx_a489d58a\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "enterprise_userId_idx_a489d58a"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "index \"enterprise_userId_idx_a489d58a\""
+        }
+      },
+      {
+        "description": "verify index \"enterprise_userId_idx_a489d58a\" on \"enterprise\" covers (userId)",
+        "sql": "SELECT EXISTS (SELECT 1 FROM pragma_index_list('enterprise') WHERE name = 'enterprise_userId_idx_a489d58a' AND \"unique\" = 0) AND (SELECT COUNT(*) FROM pragma_index_info('enterprise_userId_idx_a489d58a')) = 1 AND (SELECT COUNT(*) FROM pragma_index_info('enterprise_userId_idx_a489d58a') WHERE (seqno, name) IN (VALUES (0, 'userId'))) = 1"
+      }
+    ]
+  },
+  {
+    "id": "index.task.task_clientId_idx_153a9a49",
+    "label": "Create index task_clientId_idx_153a9a49 on task",
+    "summary": "Creates index task_clientId_idx_153a9a49 on task",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "index",
+        "name": "task_clientId_idx_153a9a49",
+        "table": "task"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"task_clientId_idx_153a9a49\" is missing",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "task_clientId_idx_153a9a49"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"task_clientId_idx_153a9a49\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"task_clientId_idx_153a9a49\"",
+        "sql": "CREATE INDEX \"task_clientId_idx_153a9a49\" ON \"task\" (\"clientId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"task_clientId_idx_153a9a49\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "task_clientId_idx_153a9a49"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "index \"task_clientId_idx_153a9a49\""
+        }
+      },
+      {
+        "description": "verify index \"task_clientId_idx_153a9a49\" on \"task\" covers (clientId)",
+        "sql": "SELECT EXISTS (SELECT 1 FROM pragma_index_list('task') WHERE name = 'task_clientId_idx_153a9a49' AND \"unique\" = 0) AND (SELECT COUNT(*) FROM pragma_index_info('task_clientId_idx_153a9a49')) = 1 AND (SELECT COUNT(*) FROM pragma_index_info('task_clientId_idx_153a9a49') WHERE (seqno, name) IN (VALUES (0, 'clientId'))) = 1"
+      }
+    ]
+  },
+  {
+    "id": "index.task.task_userenterpriseId_idx_1aebc431",
+    "label": "Create index task_userenterpriseId_idx_1aebc431 on task",
+    "summary": "Creates index task_userenterpriseId_idx_1aebc431 on task",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "index",
+        "name": "task_userenterpriseId_idx_1aebc431",
+        "table": "task"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"task_userenterpriseId_idx_1aebc431\" is missing",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "task_userenterpriseId_idx_1aebc431"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"task_userenterpriseId_idx_1aebc431\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"task_userenterpriseId_idx_1aebc431\"",
+        "sql": "CREATE INDEX \"task_userenterpriseId_idx_1aebc431\" ON \"task\" (\"userenterpriseId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"task_userenterpriseId_idx_1aebc431\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "task_userenterpriseId_idx_1aebc431"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "index \"task_userenterpriseId_idx_1aebc431\""
+        }
+      },
+      {
+        "description": "verify index \"task_userenterpriseId_idx_1aebc431\" on \"task\" covers (userenterpriseId)",
+        "sql": "SELECT EXISTS (SELECT 1 FROM pragma_index_list('task') WHERE name = 'task_userenterpriseId_idx_1aebc431' AND \"unique\" = 0) AND (SELECT COUNT(*) FROM pragma_index_info('task_userenterpriseId_idx_1aebc431')) = 1 AND (SELECT COUNT(*) FROM pragma_index_info('task_userenterpriseId_idx_1aebc431') WHERE (seqno, name) IN (VALUES (0, 'userenterpriseId'))) = 1"
+      }
+    ]
+  },
+  {
+    "id": "index.userenterprise.userenterprise_enterpriseId_idx_c87d438a",
+    "label": "Create index userenterprise_enterpriseId_idx_c87d438a on userenterprise",
+    "summary": "Creates index userenterprise_enterpriseId_idx_c87d438a on userenterprise",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "index",
+        "name": "userenterprise_enterpriseId_idx_c87d438a",
+        "table": "userenterprise"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"userenterprise_enterpriseId_idx_c87d438a\" is missing",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "userenterprise_enterpriseId_idx_c87d438a"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"userenterprise_enterpriseId_idx_c87d438a\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"userenterprise_enterpriseId_idx_c87d438a\"",
+        "sql": "CREATE INDEX \"userenterprise_enterpriseId_idx_c87d438a\" ON \"userenterprise\" (\"enterpriseId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"userenterprise_enterpriseId_idx_c87d438a\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "userenterprise_enterpriseId_idx_c87d438a"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "index \"userenterprise_enterpriseId_idx_c87d438a\""
+        }
+      },
+      {
+        "description": "verify index \"userenterprise_enterpriseId_idx_c87d438a\" on \"userenterprise\" covers (enterpriseId)",
+        "sql": "SELECT EXISTS (SELECT 1 FROM pragma_index_list('userenterprise') WHERE name = 'userenterprise_enterpriseId_idx_c87d438a' AND \"unique\" = 0) AND (SELECT COUNT(*) FROM pragma_index_info('userenterprise_enterpriseId_idx_c87d438a')) = 1 AND (SELECT COUNT(*) FROM pragma_index_info('userenterprise_enterpriseId_idx_c87d438a') WHERE (seqno, name) IN (VALUES (0, 'enterpriseId'))) = 1"
+      }
+    ]
+  },
+  {
+    "id": "index.userenterprise.userenterprise_userId_idx_a489d58a",
+    "label": "Create index userenterprise_userId_idx_a489d58a on userenterprise",
+    "summary": "Creates index userenterprise_userId_idx_a489d58a on userenterprise",
+    "operationClass": "additive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "index",
+        "name": "userenterprise_userId_idx_a489d58a",
+        "table": "userenterprise"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"userenterprise_userId_idx_a489d58a\" is missing",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "userenterprise_userId_idx_a489d58a"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"userenterprise_userId_idx_a489d58a\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"userenterprise_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"userenterprise_userId_idx_a489d58a\" ON \"userenterprise\" (\"userId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"userenterprise_userId_idx_a489d58a\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "index",
+          "userenterprise_userId_idx_a489d58a"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "index \"userenterprise_userId_idx_a489d58a\""
+        }
+      },
+      {
+        "description": "verify index \"userenterprise_userId_idx_a489d58a\" on \"userenterprise\" covers (userId)",
+        "sql": "SELECT EXISTS (SELECT 1 FROM pragma_index_list('userenterprise') WHERE name = 'userenterprise_userId_idx_a489d58a' AND \"unique\" = 0) AND (SELECT COUNT(*) FROM pragma_index_info('userenterprise_userId_idx_a489d58a')) = 1 AND (SELECT COUNT(*) FROM pragma_index_info('userenterprise_userId_idx_a489d58a') WHERE (seqno, name) IN (VALUES (0, 'userId'))) = 1"
+      }
+    ]
+  },
+  {
+    "id": "dropTable.User",
+    "label": "Drop table User",
+    "summary": "Drops table User which is not in the contract",
+    "operationClass": "destructive",
+    "target": {
+      "id": "sqlite",
+      "details": {
+        "objectType": "table",
+        "name": "User"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"User\" exists",
+        "sql": "SELECT COUNT(*) > 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "User"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"User\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop table \"User\"",
+        "sql": "DROP TABLE \"User\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"User\" is gone",
+        "sql": "SELECT COUNT(*) = 0 AS \"result\" FROM \"sqlite_master\" WHERE (\"type\" = ?1 AND \"name\" = ?2)",
+        "params": [
+          "table",
+          "User"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"User\""
+        }
+      }
+    ]
+  }
+]
