@@ -21,7 +21,7 @@ model enterprise {
   nameenterprise String
   country       String
   userId        Int
-  user          users    @relation(fields: [userId], references: [id])
+  user          user     @relation(fields: [userId], references: [id])
   state         Int      @default(1)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @onCreate(now()) @onUpdate(now())
@@ -40,7 +40,7 @@ model userenterprise {
   username     String
   role         String   @default("agente")
   password     String
-  user         users    @relation(fields: [userId], references: [id])
+  user         user     @relation(fields: [userId], references: [id])
   enterprise   enterprise @relation(fields: [enterpriseId], references: [id])
   state        Int      @default(1)
   createdAt    DateTime @default(now())
@@ -72,10 +72,10 @@ model conversation {
   enterpriseId Int
   message      String
   client       client   @relation(fields: [clientId], references: [id])
-  user         users    @relation(fields: [userId], references: [id])
+  user         user     @relation(fields: [userId], references: [id])
   enterprise   enterprise @relation(fields: [enterpriseId], references: [id])
   canal        String
-  state            Int      @default(1)
+  state        Int      @default(1)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @onCreate(now()) @onUpdate(now())
 

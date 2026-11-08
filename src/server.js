@@ -1,17 +1,27 @@
 const express = require('express');
+const cors = require('cors');
+const userRoutes = require('./routes/user.routes');
+
 const app = express();
-cors = require('cors');
+const port = Number(process.env.PORT || 3000);
 
 app.use(cors());
 app.use(express.json());
 
-
 app.get('/', (req, res) => {
-    res.send('Hello, World!');
+  res.json({ message: 'CRM Semadd Nicaragua API', status: 'ok' });
 });
 
+app.use('/api/users', userRoutes);
 
-
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
+app.use((error, req, res, next) => {
+  console.error('[api]', error);
+  if (res.headersSent) return next(error);
+  res.status(500).json({ message: 'Error interno del servidor' });
 });
+
+if (require.main === module) {
+  app.listen(port, () => console.log(`Server running on port ${port}`));
+}
+
+module.exports = app;
