@@ -1,4 +1,8 @@
 const { createCrudController } = require('./crud.controller');
 
-// Controlador de empresas y sus relaciones principales.
-module.exports = createCrudController('enterprise', ['id', 'nameenterprise', 'country', 'userId', 'state', 'createdAt', 'updatedAt']);
+// Campos de enterprise según contract.prisma.
+module.exports = createCrudController({
+  model: 'enterprise',
+  fields: ['nameenterprise', 'country', 'userId', 'state'],
+  required: ['nameenterprise', 'country', 'userId'],
+});

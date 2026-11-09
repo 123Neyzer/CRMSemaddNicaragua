@@ -1,4 +1,8 @@
 const { createCrudController } = require('./crud.controller');
 
-// Controlador de tareas asignadas a agentes y clientes.
-module.exports = createCrudController('task', ['id', 'title', 'description', 'userenterpriseId', 'clientId', 'priority', 'state', 'fechadeVencimiento', 'createdAt', 'updatedAt']);
+// Campos de task según contract.prisma.
+module.exports = createCrudController({
+  model: 'task',
+  fields: ['title', 'description', 'userenterpriseId', 'clientId', 'priority', 'state', 'fechadeVencimiento'],
+  required: ['title', 'description', 'userenterpriseId', 'clientId', 'fechadeVencimiento'],
+});

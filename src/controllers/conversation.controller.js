@@ -1,4 +1,8 @@
 const { createCrudController } = require('./crud.controller');
 
-// Controlador de conversaciones entre usuarios y clientes.
-module.exports = createCrudController('conversation', ['id', 'clientId', 'userId', 'enterpriseId', 'message', 'canal', 'state', 'createdAt', 'updatedAt']);
+// Campos de conversation según contract.prisma.
+module.exports = createCrudController({
+  model: 'conversation',
+  fields: ['clientId', 'userId', 'enterpriseId', 'message', 'canal', 'state'],
+  required: ['clientId', 'userId', 'enterpriseId', 'message', 'canal'],
+});
