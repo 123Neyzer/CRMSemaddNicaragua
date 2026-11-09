@@ -2,21 +2,21 @@ const { db } = require('../prisma/db');
 
 const publicUserFields = ['id', 'name', 'email', 'role', 'state', 'createdAt', 'updatedAt'];
 
-function sanitizeUser(user) {
+const sanitizeUser = (user) => {
   if (!user) return user;
   return Object.fromEntries(publicUserFields.map((field) => [field, user[field]]));
-}
+};
 
-async function listUsers(req, res, next) {
+const getUsers = async (req, res, next) => {
   try {
     const users = await db.orm.user.select(...publicUserFields).all();
     res.json(users);
   } catch (error) {
     next(error);
   }
-}
+};
 
-async function getUser(req, res, next) {
+const getUser = async (req, res, next) => {
   try {
     const user = await db.orm.user.where({ id: Number(req.params.id) }).first();
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
@@ -24,9 +24,9 @@ async function getUser(req, res, next) {
   } catch (error) {
     next(error);
   }
-}
+};
 
-async function createUser(req, res, next) {
+const createUser = async (req, res, next) => {
   try {
     const { name, email, password, role = 'admin', state = 1 } = req.body;
     if (!name || !email || !password) {
@@ -40,9 +40,9 @@ async function createUser(req, res, next) {
     }
     next(error);
   }
-}
+};
 
-async function updateUser(req, res, next) {
+const updateUser = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const data = {};
@@ -56,9 +56,9 @@ async function updateUser(req, res, next) {
     if (error?.code === 'ORM.UNIQUE_CONSTRAINT') return res.status(409).json({ message: 'El email ya está registrado' });
     next(error);
   }
-}
+};
 
-async function deleteUser(req, res, next) {
+const deleteUser = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     await db.orm.user.where({ id }).update({ state: 0 });
@@ -66,6 +66,6 @@ async function deleteUser(req, res, next) {
   } catch (error) {
     next(error);
   }
-}
+};
 
-module.exports = { listUsers, getUser, createUser, updateUser, deleteUser };
+module.exports = { getUsers, getUser, createUser, updateUser, deleteUser };
