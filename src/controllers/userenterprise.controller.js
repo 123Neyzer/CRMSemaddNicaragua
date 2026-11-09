@@ -1,13 +1,138 @@
 const { db } = require('../prisma/db');
 
-// Lista todas las tareas.
-const getTasks = async (req, res, next) => { try { res.json(await db.orm.task.all()); } catch (error) { next(error); } };
-// Obtiene una tarea por ID.
-const getTaskById = async (req, res, next) => { try { const item = await db.orm.task.where({ id: Number(req.params.id) }).first(); if (!item) return res.status(404).json({ message: 'Tarea no encontrada' }); res.json(item); } catch (error) { next(error); } };
-// Crea una tarea.
-const createTask = async (req, res, next) => { try { const { title, description, userenterpriseId, clientId, priority, state, fechadeVencimiento } = req.body; if ([title, description, userenterpriseId, clientId, fechadeVencimiento].some((v) => v === undefined || v === '')) return res.status(400).json({ message: 'title, description, userenterpriseId, clientId y fechadeVencimiento son obligatorios' }); const date = new Date(fechadeVencimiento); if (Number.isNaN(date.getTime())) return res.status(400).json({ message: 'fechadeVencimiento no es válida' }); res.status(201).json(await db.orm.task.create({ title, description, userenterpriseId: Number(userenterpriseId), clientId: Number(clientId), fechadeVencimiento: date, ...(priority === undefined ? {} : { priority }), ...(state === undefined ? {} : { state: Number(state) }) })); } catch (error) { next(error); } };
-// Actualiza los campos enviados.
-const updateTask = async (req, res, next) => { try { const id = Number(req.params.id); const data = { ...req.body }; ['userenterpriseId', 'clientId', 'state'].forEach((field) => { if (data[field] !== undefined) data[field] = Number(data[field]); }); if (data.fechadeVencimiento !== undefined) { data.fechadeVencimiento = new Date(data.fechadeVencimiento); if (Number.isNaN(data.fechadeVencimiento.getTime())) return res.status(400).json({ message: 'fechadeVencimiento no es válida' }); } const current = await db.orm.task.where({ id }).first(); if (!current) return res.status(404).json({ message: 'Tarea no encontrada' }); res.json(await db.orm.task.where({ id }).update(data)); } catch (error) { next(error); } };
-// Elimina definitivamente la tarea.
-const deleteTask = async (req, res, next) => { try { const id = Number(req.params.id); const current = await db.orm.task.where({ id }).first(); if (!current) return res.status(404).json({ message: 'Tarea no encontrada' }); await db.orm.task.where({ id }).delete(); res.status(204).send(); } catch (error) { next(error); } };
-module.exports = { getTasks, getTaskById, createTask, updateTask, deleteTask };
+const publicUserEnterpriseFields = [
+  'id',
+  'userId',
+  'enterpriseId',
+  'fullName',
+  'email',
+  'username',
+  'role',
+  'state',
+  'createdAt',
+  'updatedAt',
+];
+
+const sanitizeUserEnterprise = (userEnterprise) => Object.fromEntries(
+  publicUserEnterpriseFields.map((field) => [field, userEnterprise[field]]),
+);
+
+// Lista todos los usuarios asociados a empresas.
+const getUserEnterprises = async (req, res, next) => {
+  try {
+    const userEnterprises = await db.orm.userenterprise
+      .select(...publicUserEnterpriseFields)
+      .all();
+    res.json(userEnterprises);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Obtiene una asociación por ID.
+const getUserEnterpriseById = async (req, res, next) => {
+  try {
+    const userEnterprise = await db.orm.userenterprise
+      .where({ id: Number(req.params.id) })
+      .first();
+    if (!userEnterprise) {
+      return res.status(404).json({ message: 'Usuario de empresa no encontrado' });
+    }
+
+    res.json(sanitizeUserEnterprise(userEnterprise));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Crea una asociación entre un usuario y una empresa.
+const createUserEnterprise = async (req, res, next) => {
+  try {
+    const {
+      userId,
+      enterpriseId,
+      fullName,
+      email,
+      username,
+      password,
+      role = 'agente',
+      state = 1,
+    } = req.body;
+
+    if ([userId, enterpriseId, fullName, email, username, password]
+      .some((value) => value === undefined || value === '')) {
+      return res.status(400).json({
+        message: 'userId, enterpriseId, fullName, email, username y password son obligatorios',
+      });
+    }
+
+    const userEnterprise = await db.orm.userenterprise.create({
+      userId: Number(userId),
+      enterpriseId: Number(enterpriseId),
+      fullName,
+      email,
+      username,
+      password,
+      role,
+      state: Number(state),
+    });
+    res.status(201).json(sanitizeUserEnterprise(userEnterprise));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Actualiza únicamente los campos enviados.
+const updateUserEnterprise = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const data = {};
+    const textFields = ['fullName', 'email', 'username', 'password', 'role'];
+    const numberFields = ['userId', 'enterpriseId', 'state'];
+
+    textFields.forEach((field) => {
+      if (req.body[field] !== undefined) data[field] = req.body[field];
+    });
+    numberFields.forEach((field) => {
+      if (req.body[field] !== undefined) data[field] = Number(req.body[field]);
+    });
+
+    if (!Object.keys(data).length) {
+      return res.status(400).json({ message: 'No hay campos para actualizar' });
+    }
+
+    const current = await db.orm.userenterprise.where({ id }).first();
+    if (!current) {
+      return res.status(404).json({ message: 'Usuario de empresa no encontrado' });
+    }
+
+    const userEnterprise = await db.orm.userenterprise.where({ id }).update(data);
+    res.json(sanitizeUserEnterprise(userEnterprise));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Elimina definitivamente la asociación.
+const deleteUserEnterprise = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const current = await db.orm.userenterprise.where({ id }).first();
+    if (!current) {
+      return res.status(404).json({ message: 'Usuario de empresa no encontrado' });
+    }
+
+    await db.orm.userenterprise.where({ id }).delete();
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  getUserEnterprises,
+  getUserEnterpriseById,
+  createUserEnterprise,
+  updateUserEnterprise,
+  deleteUserEnterprise,
+};

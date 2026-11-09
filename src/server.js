@@ -1,6 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const userRoutes = require('./routes/user.routes');
+const enterpriseRoutes = require('./routes/enterprise.routes');
+const userEnterpriseRoutes = require('./routes/userenterprise.routes');
+const clientRoutes = require('./routes/client.routes');
+const conversationRoutes = require('./routes/conversation.routes');
+const detailConversationRoutes = require('./routes/detailconversation.routes');
+const taskRoutes = require('./routes/task.routes');
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -13,6 +19,12 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/users', userRoutes);
+app.use('/api/enterprises', enterpriseRoutes);
+app.use('/api/user-enterprises', userEnterpriseRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/conversations', conversationRoutes);
+app.use('/api/detail-conversations', detailConversationRoutes);
+app.use('/api/tasks', taskRoutes);
 
 app.use((error, req, res, next) => {
   console.error('[api]', error);

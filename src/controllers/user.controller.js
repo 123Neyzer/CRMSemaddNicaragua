@@ -12,7 +12,7 @@ const sanitizeUser = (user) => {
 // Obtiene todos los usuarios registrados.
 const getUsers = async (req, res, next) => {
   try {
-    const users = await db.orm.user.select(...publicUserFields).all();
+    const users = await db.orm.users.select(...publicUserFields).all();
     res.json(users);
   } catch (error) {
     next(error);
@@ -22,7 +22,7 @@ const getUsers = async (req, res, next) => {
 // Obtiene un usuario por su identificador.
 const getUser = async (req, res, next) => {
   try {
-    const user = await db.orm.user.where({ id: Number(req.params.id) }).first();
+    const user = await db.orm.users.where({ id: Number(req.params.id) }).first();
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
     res.json(sanitizeUser(user));
   } catch (error) {
@@ -37,7 +37,7 @@ const createUser = async (req, res, next) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'name, email y password son obligatorios' });
     }
-    const user = await db.orm.user.create({ name, email, password, role, state: Number(state) });
+    const user = await db.orm.users.create({ name, email, password, role, state: Number(state) });
     res.status(201).json(sanitizeUser(user));
   } catch (error) {
     if (error?.code === 'ORM.UNIQUE_CONSTRAINT') {
@@ -56,7 +56,10 @@ const updateUser = async (req, res, next) => {
       if (req.body[field] !== undefined) data[field] = field === 'state' ? Number(req.body[field]) : req.body[field];
     }
     if (!Object.keys(data).length) return res.status(400).json({ message: 'No hay campos para actualizar' });
-    const user = await db.orm.user.where({ id }).update(data);
+    const current = await db.orm.users.where({ id }).first();
+    if (!current) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    const user = await db.orm.users.where({ id }).update(data);
     res.json(sanitizeUser(user));
   } catch (error) {
     if (error?.code === 'ORM.UNIQUE_CONSTRAINT') return res.status(409).json({ message: 'El email ya está registrado' });
@@ -67,7 +70,11 @@ const updateUser = async (req, res, next) => {
 // Desactiva un usuario sin eliminarlo de la base de datos.
 const deleteUser = async (req, res, next) => {
   try {
-    await db.orm.user.where({ id: Number(req.params.id) }).update({ state: 0 });
+    const id = Number(req.params.id);
+    const current = await db.orm.users.where({ id }).first();
+    if (!current) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    await db.orm.users.where({ id }).update({ state: 0 });
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -78,9 +85,9 @@ const deleteUser = async (req, res, next) => {
 const hardDeleteUser = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const user = await db.orm.user.where({ id }).first();
+    const user = await db.orm.users.where({ id }).first();
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
-    await db.orm.user.where({ id }).delete();
+    await db.orm.users.where({ id }).delete();
     res.status(204).send();
   } catch (error) {
     next(error);
