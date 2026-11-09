@@ -1,22 +1,26 @@
 const { db } = require('../prisma/db');
 
+// Campos permitidos en las respuestas públicas. Nunca devolvemos contraseñas.
 const publicUserFields = ['id', 'name', 'email', 'role', 'state', 'createdAt', 'updatedAt'];
 
-function sanitizeUser(user) {
+// Elimina datos sensibles antes de enviar un usuario al cliente.
+const sanitizeUser = (user) => {
   if (!user) return user;
   return Object.fromEntries(publicUserFields.map((field) => [field, user[field]]));
-}
+};
 
-async function listUsers(req, res, next) {
+// Obtiene todos los usuarios registrados.
+const getUsers = async (req, res, next) => {
   try {
     const users = await db.orm.user.select(...publicUserFields).all();
     res.json(users);
   } catch (error) {
     next(error);
   }
-}
+};
 
-async function getUser(req, res, next) {
+// Obtiene un usuario por su identificador.
+const getUser = async (req, res, next) => {
   try {
     const user = await db.orm.user.where({ id: Number(req.params.id) }).first();
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
@@ -24,9 +28,10 @@ async function getUser(req, res, next) {
   } catch (error) {
     next(error);
   }
-}
+};
 
-async function createUser(req, res, next) {
+// Valida y crea un usuario nuevo.
+const createUser = async (req, res, next) => {
   try {
     const { name, email, password, role = 'admin', state = 1 } = req.body;
     if (!name || !email || !password) {
@@ -40,9 +45,10 @@ async function createUser(req, res, next) {
     }
     next(error);
   }
-}
+};
 
-async function updateUser(req, res, next) {
+// Actualiza únicamente los campos enviados en la petición.
+const updateUser = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const data = {};
@@ -56,16 +62,29 @@ async function updateUser(req, res, next) {
     if (error?.code === 'ORM.UNIQUE_CONSTRAINT') return res.status(409).json({ message: 'El email ya está registrado' });
     next(error);
   }
-}
+};
 
-async function deleteUser(req, res, next) {
+// Desactiva un usuario sin eliminarlo de la base de datos.
+const deleteUser = async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
-    await db.orm.user.where({ id }).update({ state: 0 });
+    await db.orm.user.where({ id: Number(req.params.id) }).update({ state: 0 });
     res.status(204).send();
   } catch (error) {
     next(error);
   }
-}
+};
 
-module.exports = { listUsers, getUser, createUser, updateUser, deleteUser };
+// Elimina definitivamente el registro del usuario.
+const hardDeleteUser = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const user = await db.orm.user.where({ id }).first();
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+    await db.orm.user.where({ id }).delete();
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getUsers, getUser, createUser, updateUser, deleteUser, hardDeleteUser };

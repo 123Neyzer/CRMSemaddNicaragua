@@ -1,7 +1,6 @@
+// use prisma-8
 
- // use prisma-8
-
-model user {
+model users {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
@@ -17,14 +16,14 @@ model user {
 }
 
 model enterprise {
-  id            Int      @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   nameenterprise String
-  country       String
-  userId        Int
-  user          user     @relation(fields: [userId], references: [id])
-  state         Int      @default(1)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @onCreate(now()) @onUpdate(now())
+  country        String
+  userId         Int
+  user           users    @relation(fields: [userId], references: [id])
+  state          Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @onCreate(now()) @onUpdate(now())
 
   userenterprises userenterprise[]
   clients         client[]
@@ -32,81 +31,81 @@ model enterprise {
 }
 
 model userenterprise {
-  id           Int      @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   userId       Int
   enterpriseId Int
   fullName     String
   email        String
   username     String
-  role         String   @default("agente")
+  role         String     @default("agente")
   password     String
-  user         user     @relation(fields: [userId], references: [id])
+  user         users      @relation(fields: [userId], references: [id])
   enterprise   enterprise @relation(fields: [enterpriseId], references: [id])
-  state        Int      @default(1)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @onCreate(now()) @onUpdate(now())
+  state        Int        @default(1)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @onCreate(now()) @onUpdate(now())
 
-  conversations   detailconversation[]
-  tasks           task[]
+  conversations detailconversation[]
+  tasks         task[]
 }
 
 model client {
-  id             Int      @id @default(autoincrement())
+  id             Int        @id @default(autoincrement())
   fullName       String
   telephone      String
   classification String
   summary        String
   empresaId      Int
   enterprise     enterprise @relation(fields: [empresaId], references: [id])
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @onCreate(now()) @onUpdate(now())
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @onCreate(now()) @onUpdate(now())
 
   conversations conversation[]
   tasks         task[]
 }
 
 model conversation {
-  id           Int      @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   clientId     Int
   userId       Int
   enterpriseId Int
   message      String
-  client       client   @relation(fields: [clientId], references: [id])
-  user         user     @relation(fields: [userId], references: [id])
+  client       client     @relation(fields: [clientId], references: [id])
+  user         users      @relation(fields: [userId], references: [id])
   enterprise   enterprise @relation(fields: [enterpriseId], references: [id])
   canal        String
-  state        Int      @default(1)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @onCreate(now()) @onUpdate(now())
+  state        Int        @default(1)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @onCreate(now()) @onUpdate(now())
 
   details detailconversation[]
 }
 
 model detailconversation {
-  id                Int      @id @default(autoincrement())
-  conversationId    Int
-  message           String
-  typeagent         String
-  userenterpriseId  Int
-  userenterprise    userenterprise @relation(fields: [userenterpriseId], references: [id])
-  conversation      conversation   @relation(fields: [conversationId], references: [id])
-  state        Int      @default(1)
-  content           String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @onCreate(now()) @onUpdate(now())
+  id               Int            @id @default(autoincrement())
+  conversationId   Int
+  message          String
+  typeagent        String
+  userenterpriseId Int
+  userenterprise   userenterprise @relation(fields: [userenterpriseId], references: [id])
+  conversation     conversation   @relation(fields: [conversationId], references: [id])
+  state            Int            @default(1)
+  content          String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @onCreate(now()) @onUpdate(now())
 }
 
 model task {
-  id               Int      @id @default(autoincrement())
-  title            String
-  description      String
-  userenterpriseId Int
-  clientId         Int
-  client           client         @relation(fields: [clientId], references: [id])
-  userenterprise   userenterprise @relation(fields: [userenterpriseId], references: [id])
-  priority         String         @default("media")
-  state             Int      @default(1)
+  id                 Int            @id @default(autoincrement())
+  title              String
+  description        String
+  userenterpriseId   Int
+  clientId           Int
+  client             client         @relation(fields: [clientId], references: [id])
+  userenterprise     userenterprise @relation(fields: [userenterpriseId], references: [id])
+  priority           String         @default("media")
+  state              Int            @default(1)
   fechadeVencimiento DateTime
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @onCreate(now()) @onUpdate(now())
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @onCreate(now()) @onUpdate(now())
 }

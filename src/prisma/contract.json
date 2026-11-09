@@ -24,12 +24,12 @@
       "model": "task",
       "namespace": "__unbound__"
     },
-    "user": {
-      "model": "user",
-      "namespace": "__unbound__"
-    },
     "userenterprise": {
       "model": "userenterprise",
+      "namespace": "__unbound__"
+    },
+    "users": {
+      "model": "users",
       "namespace": "__unbound__"
     }
   },
@@ -301,7 +301,7 @@
                   ]
                 },
                 "to": {
-                  "model": "user",
+                  "model": "users",
                   "namespace": "__unbound__"
                 }
               }
@@ -569,7 +569,7 @@
                   ]
                 },
                 "to": {
-                  "model": "user",
+                  "model": "users",
                   "namespace": "__unbound__"
                 }
               },
@@ -761,143 +761,6 @@
               "table": "task"
             }
           },
-          "user": {
-            "fields": {
-              "createdAt": {
-                "nullable": false,
-                "type": {
-                  "codecId": "sqlite/datetime@1",
-                  "kind": "scalar"
-                }
-              },
-              "email": {
-                "nullable": false,
-                "type": {
-                  "codecId": "sqlite/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "id": {
-                "nullable": false,
-                "type": {
-                  "codecId": "sqlite/integer@1",
-                  "kind": "scalar"
-                }
-              },
-              "name": {
-                "nullable": false,
-                "type": {
-                  "codecId": "sqlite/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "password": {
-                "nullable": false,
-                "type": {
-                  "codecId": "sqlite/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "role": {
-                "nullable": false,
-                "type": {
-                  "codecId": "sqlite/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "state": {
-                "nullable": false,
-                "type": {
-                  "codecId": "sqlite/integer@1",
-                  "kind": "scalar"
-                }
-              },
-              "updatedAt": {
-                "nullable": false,
-                "type": {
-                  "codecId": "sqlite/datetime@1",
-                  "kind": "scalar"
-                }
-              }
-            },
-            "relations": {
-              "conversations": {
-                "cardinality": "1:N",
-                "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "userId"
-                  ]
-                },
-                "to": {
-                  "model": "conversation",
-                  "namespace": "__unbound__"
-                }
-              },
-              "enterprises": {
-                "cardinality": "1:N",
-                "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "userId"
-                  ]
-                },
-                "to": {
-                  "model": "enterprise",
-                  "namespace": "__unbound__"
-                }
-              },
-              "userenterprises": {
-                "cardinality": "1:N",
-                "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "userId"
-                  ]
-                },
-                "to": {
-                  "model": "userenterprise",
-                  "namespace": "__unbound__"
-                }
-              }
-            },
-            "storage": {
-              "fields": {
-                "createdAt": {
-                  "column": "createdAt"
-                },
-                "email": {
-                  "column": "email"
-                },
-                "id": {
-                  "column": "id"
-                },
-                "name": {
-                  "column": "name"
-                },
-                "password": {
-                  "column": "password"
-                },
-                "role": {
-                  "column": "role"
-                },
-                "state": {
-                  "column": "state"
-                },
-                "updatedAt": {
-                  "column": "updatedAt"
-                }
-              },
-              "namespaceId": "__unbound__",
-              "table": "user"
-            }
-          },
           "userenterprise": {
             "fields": {
               "createdAt": {
@@ -1037,7 +900,7 @@
                   ]
                 },
                 "to": {
-                  "model": "user",
+                  "model": "users",
                   "namespace": "__unbound__"
                 }
               }
@@ -1080,6 +943,143 @@
               },
               "namespaceId": "__unbound__",
               "table": "userenterprise"
+            }
+          },
+          "users": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/datetime@1",
+                  "kind": "scalar"
+                }
+              },
+              "email": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/integer@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "password": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "role": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "state": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/integer@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/datetime@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "conversations": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "userId"
+                  ]
+                },
+                "to": {
+                  "model": "conversation",
+                  "namespace": "__unbound__"
+                }
+              },
+              "enterprises": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "userId"
+                  ]
+                },
+                "to": {
+                  "model": "enterprise",
+                  "namespace": "__unbound__"
+                }
+              },
+              "userenterprises": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "userId"
+                  ]
+                },
+                "to": {
+                  "model": "userenterprise",
+                  "namespace": "__unbound__"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "email": {
+                  "column": "email"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "password": {
+                  "column": "password"
+                },
+                "role": {
+                  "column": "role"
+                },
+                "state": {
+                  "column": "state"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "__unbound__",
+              "table": "users"
             }
           }
         }
@@ -1276,7 +1276,7 @@
                       "id"
                     ],
                     "namespaceId": "__unbound__",
-                    "tableName": "user"
+                    "tableName": "users"
                   }
                 },
                 {
@@ -1524,7 +1524,7 @@
                       "id"
                     ],
                     "namespaceId": "__unbound__",
-                    "tableName": "user"
+                    "tableName": "users"
                   }
                 }
               ],
@@ -1679,80 +1679,6 @@
               },
               "uniques": []
             },
-            "user": {
-              "columns": {
-                "createdAt": {
-                  "codecId": "sqlite/datetime@1",
-                  "dataType": "sqlite/datetime",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
-                  "nullable": false
-                },
-                "email": {
-                  "codecId": "sqlite/text@1",
-                  "dataType": "sqlite/text",
-                  "nullable": false
-                },
-                "id": {
-                  "codecId": "sqlite/integer@1",
-                  "dataType": "sqlite/integer",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
-                  "nullable": false
-                },
-                "name": {
-                  "codecId": "sqlite/text@1",
-                  "dataType": "sqlite/text",
-                  "nullable": false
-                },
-                "password": {
-                  "codecId": "sqlite/text@1",
-                  "dataType": "sqlite/text",
-                  "nullable": false
-                },
-                "role": {
-                  "codecId": "sqlite/text@1",
-                  "dataType": "sqlite/text",
-                  "default": {
-                    "kind": "literal",
-                    "value": "admin"
-                  },
-                  "nullable": false
-                },
-                "state": {
-                  "codecId": "sqlite/integer@1",
-                  "dataType": "sqlite/integer",
-                  "default": {
-                    "kind": "literal",
-                    "value": "1"
-                  },
-                  "nullable": false
-                },
-                "updatedAt": {
-                  "codecId": "sqlite/datetime@1",
-                  "dataType": "sqlite/datetime",
-                  "nullable": false
-                }
-              },
-              "foreignKeys": [],
-              "indexes": [],
-              "primaryKey": {
-                "columns": [
-                  "id"
-                ]
-              },
-              "uniques": [
-                {
-                  "columns": [
-                    "email"
-                  ]
-                }
-              ]
-            },
             "userenterprise": {
               "columns": {
                 "createdAt": {
@@ -1844,7 +1770,7 @@
                       "id"
                     ],
                     "namespaceId": "__unbound__",
-                    "tableName": "user"
+                    "tableName": "users"
                   }
                 },
                 {
@@ -1891,16 +1817,90 @@
                 ]
               },
               "uniques": []
+            },
+            "users": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "sqlite/datetime@1",
+                  "dataType": "sqlite/datetime",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "email": {
+                  "codecId": "sqlite/text@1",
+                  "dataType": "sqlite/text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "sqlite/integer@1",
+                  "dataType": "sqlite/integer",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "name": {
+                  "codecId": "sqlite/text@1",
+                  "dataType": "sqlite/text",
+                  "nullable": false
+                },
+                "password": {
+                  "codecId": "sqlite/text@1",
+                  "dataType": "sqlite/text",
+                  "nullable": false
+                },
+                "role": {
+                  "codecId": "sqlite/text@1",
+                  "dataType": "sqlite/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "admin"
+                  },
+                  "nullable": false
+                },
+                "state": {
+                  "codecId": "sqlite/integer@1",
+                  "dataType": "sqlite/integer",
+                  "default": {
+                    "kind": "literal",
+                    "value": "1"
+                  },
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "sqlite/datetime@1",
+                  "dataType": "sqlite/datetime",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "email"
+                  ]
+                }
+              ]
             }
           }
         },
         "id": "__unbound__"
       }
     },
-    "storageHash": "afc931e7e965f46b0ede3bf4079b73ffa752c0bf89dd9f83e941342b721566e6"
+    "storageHash": "4fcbe2e7e982e48226c8da68439134d550ae946cd60816345243a48d372ac339"
   },
   "execution": {
-    "executionHash": "d1345aef5a05f46cc76e9586fcef6a7a97bfda5107a3e4efcdba6769230ce567",
+    "executionHash": "b43c6c9faf05cc99bee9855a87e971c27efb4dc96eb75e20c954303ba4f85ef6",
     "mutations": {
       "defaults": [
         {
@@ -1988,7 +1988,7 @@
             "kind": "generator"
           },
           "ref": {
-            "entry": "user",
+            "entry": "userenterprise",
             "field": "updatedAt",
             "namespace": "__unbound__"
           }
@@ -2003,7 +2003,7 @@
             "kind": "generator"
           },
           "ref": {
-            "entry": "userenterprise",
+            "entry": "users",
             "field": "updatedAt",
             "namespace": "__unbound__"
           }

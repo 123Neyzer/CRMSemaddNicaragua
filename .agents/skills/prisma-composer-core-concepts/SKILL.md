@@ -2,14 +2,14 @@
 name: prisma-composer-core-concepts
 metadata:
   library: "@prisma/composer"
-  library_version: "0.36.0"
+  library_version: "0.38.0"
   version: 2026.9.1
 description: >-
   Use when deploying or managing an app that uses Prisma Composer
   (`@prisma/composer`): wiring its services and Modules, running it locally,
   testing composed services, or standing up / tearing down an environment.
   Triggers on "prisma composer", "@prisma/composer", "prisma app",
-  `prisma deploy`, `prisma dev`, `compute()`, `module()`, `contract()`,
+  `prisma deploy`, `prisma dev`, `compute()`, `appRoot()`, `module()`, `contract()`,
   `service.load()`, `mockService`, `bootstrapService`.
 ---
 
@@ -47,17 +47,17 @@ app, executing nothing when imported. Three node kinds exist:
 | --- | --- | --- |
 | Service | `compute()` | A running unit of your code; atomic, Composer sees only its boundary |
 | Resource | `rawPostgres()`, `bucket()` | A stateful managed dependency |
-| Module | `module()` | A grouping boundary; runs no code of its own, depends on and exposes typed interfaces; its builder receives `deps`, `secrets`, `params`, `environment` and `provision` |
+| Resource: public URL | `publicUrl()` | Makes one service reachable from the internet at one hostname; depends on the service's exposed HTTP interface and exposes nothing |
+| Module | `module()` | A grouping boundary; runs no code of its own, depends on and exposes typed interfaces; its builder receives `deps`, `input`, `environment` and `provision` |
+| App root | `appRoot()` | The outermost module, the entry's default export; no `deps` or `expose`, and nothing can provision it; its builder receives `input`, `environment` and `provision` |
 
-Nodes connect through typed **interfaces**: `deps` declares what a node depends on,
-`expose` declares what it exposes. Wiring happens in a Module's builder via
-`provision()`, and the root Module, handed to the CLI, is the App:
+Nodes connect through typed **interfaces**: `deps` declares what a node depends on, `expose` declares what it exposes. Wiring happens in a Module's builder via `provision()`, and the app root, built with `appRoot()` and handed to the CLI, is the App:
 
 ```ts
 // module.ts
-import { module } from '@prisma/composer';
+import { appRoot } from '@prisma/composer';
 
-export default module('store', ({ provision }) => {
+export default appRoot('store', ({ provision }) => {
   const catalog = provision(catalogModule);
   provision(storefrontService, { deps: { catalog: catalog.rpc } });
 });
@@ -75,8 +75,8 @@ Composer itself is target-agnostic: `@prisma/composer` carries authoring,
 testing, and the CLI, coupled to no platform. A deploy target is an extension
 registered in the deploy config; `@prisma/composer-prisma-cloud` is the
 Prisma Cloud target and the one this skill's deploy sections assume. Its
-root exports `compute`, `rawPostgres`, `bucket`, `envSecret`, and
-`envParam`; the ORM vocabulary (`postgres`, `dataContract`) lives under the
+root exports `compute`, `rawPostgres`, `bucket`, `publicUrl`, `envSecret`,
+and `envParam`; the ORM vocabulary (`postgres`, `dataContract`) lives under the
 `/orm` subpath, alongside the shared `/cron`, `/storage`, `/streams`,
 `/auth`, and `/email` modules. These are the only two Composer packages a
 basic Prisma Cloud app needs, and nothing installs them for you: a fresh
@@ -134,20 +134,15 @@ client back from `load()`.
 The service declares its whole incoming configuration, plain values and
 credentials together, as **one [Standard Schema](https://standardschema.dev)**
 (arktype is the house choice). A credential is a field typed as
-`secretString()` from `@prisma/composer/arktype`; conditional legality ("no
+`secretString()` from `@prisma/composer/arktype` (or `@prisma/composer/zod` for a Zod schema; the app installs `arktype` 2 or `zod` 4 itself, and Composer uses that copy); conditional legality ("no
 stripe key unless billing is on") is an ordinary schema union. The binding at
 `provision()` mirrors the schema's shape; `envSecret('NAME')` names the
 platform variable and never carries the value.
 
 Rules that bite:
 
-1. **Secretness is enforced by validation.** A literal bound where the schema
-   expects `SecretString` fails the deploy; `envSecret` bound to a plain
-   string field fails the same way.
-2. **`envParam` values arrive as raw strings**; bind them to string fields.
-   The environment's platform variable is the store; the deploying shell only seeds
-   a missing name (and the deploy fails early, naming the variable, when both
-   lack it). Changing the platform value needs a redeploy.
+1. **Secretness is checked by the binding's type and by the deploy.** A `provision()` binding, a service's or a module's, is typed from the schema: a literal or a `SecretBox` where the schema expects `SecretString`, or `envSecret` in a text field, fails to compile, and the deploy refuses it where the schema has no types. An ArkType schema with a `SecretString` field cannot also transform its input: a morph anywhere in it (`'string.trim'`, `.pipe()`, `field(type('string.integer.parse'))`) or `'+': 'delete'` copies the input, the copied secret loses its value, and the deploy refuses it. Transform in the service code instead; a Zod schema keeps the box.
+2. **`envParam` values arrive as raw strings**; bind them to string fields. A field of a narrower type, such as `email()`'s `deliveryMode`, refuses `envParam` at compile time; declare that field in the root's `input` instead, for `email()` from the exported `emailDeliveryModes`. In a service's `input`, the deploy reads the variable from the app configuration on every deploy and writes its value into the input document. As a service param, the deploy writes a pointer row to a platform variable, which the service reads at boot. `envSecret` always lives on the platform: each environment keeps its own copy, and the app secrets only seed a missing name (the deploy fails early, naming the variable, when both lack it).
 3. **Absence is the schema's call.** An env-bound field whose variable is
    unset or empty resolves to *key omitted*, which is legal only if the
    schema allows it (optional field, union arm). The deploy report prints the
@@ -156,23 +151,31 @@ Rules that bite:
 4. **The reserved `port` is outside the schema.** Read it through
    `service.port()`, never `process.env`. The framework also exports `PORT`
    for Next.js standalone, which binds it itself.
-5. **A Module forwards a secret need without learning the platform name.**
-   Declare `secrets: { signingKey: secret() }` on the Module boundary and
-   pass the forwarded ref as a binding leaf; the parent binds the real
-   source.
+5. **A Module passes a secret on without learning the platform name.**
+   Declare a `secretString()` field in the Module's `input` and pass
+   `input.<field>` on as a binding leaf; the parent binds `envSecret('NAME')`.
+   A module has no `params` or `secrets` slots: `module()` and `provision()`
+   refuse both, naming `input`. A service's `params` stay.
 6. `input.apiKey.expose()` is the only way to a secret's value; the box
    redacts everywhere else (logs, JSON, errors).
+7. **A field bound to `serviceOrigin()` or a plain `generatedParam()` is wrapped**: `field(type('string'))`. At deploy the schema sees a pointer, and a plain `'string'` field refuses it: a compile error in a service's or a module's binding, and a deploy error where the schema has no types. `service.input()` and `mockService`'s input double read the field as its inner type.
 
 ### Values that differ per environment
 
 The graph is the same in every environment; only configuration may differ.
 
+- A module declares `input` (one Standard Schema) as a service does; `provision(module, { input })` binds it, and the body receives `input`, a dictionary of values: it passes each field on by name into a binding or, for a plain field, lists it in `resolve()`. Passing the whole `input` on fails to compile, and the deploy refuses it. A root's `input` is the app configuration, and a module's `input` takes every source a service's does.
+- `field(inner)` from `@prisma/composer/arktype` or `@prisma/composer/zod` wraps one leaf field's schema (`field(type('string'))`, `field(z.string())`) so it also accepts a plain pointer, which is what a value known only at boot such as `serviceOrigin()` is at deploy. In the body the field is `Value<string | Pointer<string>>`: pass it into another wrapped field or a service's input, never a plain `string` field (compile error). Wrap leaves, not object schemas; an ArkType default goes outside: `field(type('string')).default('x')`. Other schema libraries: `Pointer`, `isPlainPointer()` and `isSecretPointer()` from `@prisma/composer`. Wrap every leaf of a reusable module's schema other than a `secretString()` field, unless a `resolve()` lists it; keep a root's fields plain. `field(secretString())` is wrong: it accepts a plain pointer into a secret field, and the service fails at boot.
+- `composer({ config: [...], secrets: [...] })` lists config adapters; each gets the environment's name and returns values, later wins by top-level key. Both default to `[environmentVariables()]` (the shell); a list you write replaces the default. `dotenv()` reads `.env`, `.env.local`, `.env.<environment>`, `.env.<environment>.local`, later wins. The app configuration is the root's input and what `envParam()` reads; pass the root's input fields on by name, as every module does; its whole `input` would be the whole app configuration, by default every shell variable. The app secrets only seed `envSecret()` platform variables and `prisma dev`'s secrets, never the root's input. Both import from `@prisma/composer/config`. Credentials (`PRISMA_SERVICE_TOKEN`) still come from the shell. `dotenv()` reads `.env`, `.env.local`, `.env.<environment>`, `.env.<environment>.local` through `dotenv-flow` (no `.env.local` for `test`); remove `import 'dotenv/config'` when you list it. Composer redacts the values under the names an `envSecret()` reads, in either list; the lists' other values are not secrets and print as they are, apart from values that look like credentials. Under the CLI the deploy engine's own output is not redacted yet.
+- A field exists only under a plain object: a path into a string, an array or a secret, such as `input.tags[0]`, fails the deploy naming the path.
+- A truthiness check such as `if (input.enabled)` is not caught: the field is an object, so the branch always runs, in every environment. A module's structure cannot depend on its input; to provision something only sometimes, let the parent decide whether to provision it.
 - The module body receives `environment`; `environment.name` is a value standing for the name `--environment` gave (`production` for `prisma deploy`, `dev` for `prisma dev` by default).
 - `resolve([deps], ([values]) => …)` from `@prisma/composer` returns a computed value; `fn` receives the dependencies' real values as one tuple.
-- A value is accepted as a leaf of a service's `input` binding, at any depth, or as a service param. Never as a provision id, a `deps` entry, or a module's `secrets` or `params` binding.
+- A value is accepted as a leaf of a service's or a module's `input` binding, at any depth, as a service param, as one of a `resource()` node's `props`, or as a public URL's `url`. Never as a provision id or a `deps` entry.
 - A value is opaque in the body: you cannot read, compare or branch on it. List it as a `resolve()` dependency instead.
 - Calling `provision()` inside `fn` fails the load: `fn` computes configuration, never graph structure.
-- `fn` is pure and synchronous and returns plain data (no `undefined`, Promise, value, `envParam()` or `envSecret()`); a deploy and `destroy` both run it, in two processes. To retire an environment, keep its case in every `fn` until `destroy` for it has finished.
+- `fn` is pure and synchronous and returns plain data (no `undefined`, Promise, value or source); a deploy and `destroy` both run it, in two processes. To retire an environment, keep its case in every `fn` until `destroy` for it has finished.
+- Sources are values. `resolve([envParam('X')], ([x]) => …)` receives the string, and an unset `X` fails the deploy. A dependency must be a deploy-time value: `envSecret()`, `generatedParam()`, `serviceOrigin()`, a field wrapped with `field()` and a `secretString()` field cannot be listed (a compile error saying so; for a field typed `unknown` or a cast, the deploy fails naming the field). Bind those directly; to compute with a field, declare it plain. For a different secret per environment, use one name with a different value on each environment.
 
 ## Contracts and RPC
 
@@ -227,6 +230,28 @@ the app's. Each dependency shows in the application topology as a call, also
 through module boundaries; a URL passed as `input` (`serviceOrigin()`)
 does not, so declare a dependency for every service you call. The auth
 module's `api` port is a raw HTTP port: wire it with `rawHttp()`.
+
+**Public URLs.** A service is reachable from the internet only through a
+public URL the app declares:
+`provision(publicUrl({ id: 'site', url, target: web.http }))`, where `id`
+sets the address (`shop.site`) and changing it replaces the URL, and where
+`web` exposes `http: rawHttpContract` (an RPC interface as `target` fails
+`tsc`; a module's forwarded HTTP interface lands on the service inside it).
+`url` is required and is one of two strategies: `publicUrl.prismaBuild()`
+serves at the service's `prisma.build` hostname and creates nothing;
+`publicUrl.hostname('shop.com')`, or the bare string `'shop.com'`, attaches
+that hostname to the service as a custom domain. One hostname per public URL.
+A per-environment `url` is a `resolve()` value returning either strategy or a
+string; anything else fails deploy and dev before any of the app's resources
+are created or changed. Before
+a deploy names a hostname, the TXT record `_prisma-verification.<hostname>`
+and a CNAME to the platform must be published, or the deploy fails with the
+platform's error (`domain-ownership-required` for the TXT record); don't
+work around it, publish the records or use `publicUrl.prismaBuild()` there. A
+change from a serving hostname to one that is not ready fails the deploy and
+the old hostname keeps serving. `prisma dev` ignores a named hostname and
+warns once per public URL that names a hostname. A service with no public URL is still reachable at
+its `prisma.build` hostname today.
 
 ## Builds are yours
 
@@ -462,7 +487,7 @@ as the Composer that runs the deploy. An older extension would read every
 environment as production, so deploy and destroy refuse it with
 `DEPS.EXTENSION_INCOMPATIBLE`.
 
-**The engine underneath is alchemy.** Convergence is executed by [alchemy](https://alchemy.run), a third-party infrastructure-as-code engine that arrives as an ordinary, exactly-pinned npm dependency of `@prisma/composer` (2.0.0-beta.83 at this library version). Your code never imports or configures it; consult alchemy's own docs for the engine itself. What matters operationally:
+**The engine underneath is alchemy.** Convergence is executed by [alchemy](https://alchemy.run), a third-party infrastructure-as-code engine that arrives as an ordinary, exactly-pinned npm dependency of `@prisma/composer` (2.0.0-beta.84 at this library version). Your code never imports or configures it; consult alchemy's own docs for the engine itself. What matters operationally:
 
 Composer runs the alchemy package installed beside the app's
 `@prisma/composer` and starts it with Node (the first `node` on PATH when `prisma` runs
@@ -608,7 +633,7 @@ that surprise:
    build and run `prisma dev --detach` again.
 4. `dev` reads `prisma.config.ts` once, at start, and watches it: after an
    edit it says so and pauses rebuilds until you restart `dev`.
-5. `dev` reads secrets only from its environment variables: export them in the shell, or load a `.env`: install the `dotenv` package, then make `import 'dotenv/config'` the first line of `prisma.config.ts` (`process.loadEnvFile('.env')` works only under Node, not Bun). A required secret that is unset or empty stops `dev` with an error naming it; an optional one reaches the service as absent. A changed value takes effect on the next `prisma dev`. A `.env` that only the framework loads (Next.js) does not count: Composer reads secrets before the dev server starts.
+5. `dev` reads secrets only from the `secrets` adapters. Put them where a `secrets` adapter reads them: the shell by default, or `.env.dev` with `secrets: [dotenv(), environmentVariables()]`. A required secret that is unset or empty stops `dev` with an error naming it; an optional one reaches the service as absent. A changed value takes effect on the next `prisma dev`. A `.env` that only the framework loads (Next.js) does not count: Composer reads secrets before the dev server starts.
 6. The emulators are machine-wide daemons shared by every `dev`, registered
    under `~/.prisma-composer/emulators`. Set `PRISMA_COMPOSER_EMULATORS_DIR`
    to an absolute directory to give a checkout or CI job its own compute,
@@ -641,7 +666,7 @@ under test.
 `mockService` returns a copy of the service whose `load()` yields your
 doubles (type-checked against the declared deps) and whose `input()` yields
 the object passed under the reserved `input` key (required exactly when the
-service declares an input schema; handed over as-is, not validated). Wiring
+service declares an input schema, typed as `service.input()` returns, with no pointers; handed over as-is, not validated). Wiring
 the module substitution is your runner's job (`vi.mock` in Vitest,
 `mock.module` in bun test).
 
@@ -673,8 +698,8 @@ provision exactly like your own:
 | `cron` from `/cron` | An always-on scheduler (it holds Compute's keep-awake guard) firing your schedule at your runner service; `input` on `cron()` binds the runner's input schema | nothing |
 | `storage` from `/storage` | An S3-backed blob store (own Postgres + minted credentials) | `store` |
 | `streams` from `/streams` | Durable append-only event streams over a `store` | `streams` |
-| `auth` from `/auth` | Signup, login, sessions, and JWT verification (Better Auth in one service, own database). `auth({ signUp: 'closed' })` makes Better Auth refuse self-service sign-up; operator-created accounts go through `admin.createUser({ email, name, password?, emailVerified? })` from a service wired to `admin` (it throws on a duplicate email and sends no mail); a signed-in user deletes their own account with Better Auth's `POST /api/auth/delete-user` through the proxy (password, or a session < 24 h old); operators delete with `admin.removeUser({ userId })`; either way your own rows follow your `auth:User` FK's `onDelete` (`Cascade` deletes them, `Restrict` refuses the deletion) | `api`, `session`, `admin` |
-| `email` from `/email` | Transactional email with a stored outbox (own service and database) | `send`, `outbox` |
+| `auth` from `/auth` | Signup, login, sessions, and JWT verification (Better Auth in one service, own database). `auth({ signUp: 'closed' })` makes Better Auth refuse self-service sign-up; operator-created accounts go through `admin.createUser({ email, name, password?, emailVerified? })` from a service wired to `admin` (it throws on a duplicate email and sends no mail); a signed-in user deletes their own account with Better Auth's `POST /api/auth/delete-user` through the proxy (password, or a session < 24 h old); operators delete with `admin.removeUser({ userId })`; either way your own rows follow your `auth:User` FK's `onDelete` (`Cascade` deletes them, `Restrict` refuses the deletion). Bind `input: { baseUrl }`, the public app origin: `serviceOrigin('<app>.<service>')`, `envParam(...)` or a literal. | `api`, `session`, `admin` |
+| `email` from `/email` | Transactional email with a stored outbox (own service and database). Bind `input: { deliveryMode, from, deliveryCredential }`; the credential with `envSecret(...)`, required even when `deliveryMode` is `none`. `deliveryMode` is one of `emailDeliveryModes`; bind a literal or a root input field declared from it (`type.enumerated(...emailDeliveryModes)`, `z.enum(emailDeliveryModes)`), not `envParam()`. | `send`, `outbox` |
 
 `bucket()` (imported alongside `rawPostgres`) is a raw S3-compatible bucket:
 the dependency end receives `{ url, bucket, accessKeyId, secretAccessKey }`,
