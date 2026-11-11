@@ -1,5 +1,5 @@
 const { db } = require('../prisma/db');
-const bycrypt = require('bcrypt');
+const bcrypt = require('bcrypt');
 
 // Campos permitidos en las respuestas públicas. Nunca devolvemos contraseñas.
 const publicUserFields = ['id', 'name', 'email', 'role', 'state', 'createdAt', 'updatedAt'];
@@ -38,7 +38,7 @@ const createUser = async (req, res, next) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'name, email y password son obligatorios' });
     }
-    const hashedPassword = await bycrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
     const user = await db.orm.users.create({ name, email, password: hashedPassword, role, state: Number(state) });
     res.status(201).json(sanitizeUser(user));
   } catch (error) {
@@ -55,7 +55,10 @@ const updateUser = async (req, res, next) => {
     const id = Number(req.params.id);
     const data = {};
     for (const field of ['name', 'email', 'password', 'role', 'state']) {
-      if (req.body[field] !== undefined) data[field] = field === 'state' ? Number(req.body[field]) : req.body[field];
+      if (req.body[field] === undefined) continue;
+      if (field === 'state') data[field] = Number(req.body[field]);
+      else if (field === 'password') data[field] = await bcrypt.hash(req.body[field], 10);
+      else data[field] = req.body[field];
     }
     if (!Object.keys(data).length) return res.status(400).json({ message: 'No hay campos para actualizar' });
     const current = await db.orm.users.where({ id }).first();

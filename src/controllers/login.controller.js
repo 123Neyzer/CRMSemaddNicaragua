@@ -1,7 +1,6 @@
 const { db } = require('../prisma/db');
 const bcrypt = require('bcrypt');
 const { generateToken } = require('../utils/jwt');
-const { sanitizeUser } = require('./user.controller');
 const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -12,12 +11,26 @@ const loginUser = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
-    const isMatch = await bcrypt.compare(password, user.password);
+    let isMatch = false;
+    try {
+      isMatch = await bcrypt.compare(password, user.password);
+    } catch {
+      return res.status(401).json({ message: 'Credenciales inválidas' });
+    }
     if (!isMatch) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
     const token = generateToken({ id: user.id, email: user.email });
-    res.json({ token, user: sanitizeUser(user) });
+    const publicUser = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      state: user.state,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+    res.json({ token, user: publicUser });
   } catch (error) {
     next(error);
   }
