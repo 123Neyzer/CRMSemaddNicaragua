@@ -1,4 +1,5 @@
 const { db } = require('../prisma/db');
+const bycrypt = require('bcrypt');
 
 // Campos permitidos en las respuestas públicas. Nunca devolvemos contraseñas.
 const publicUserFields = ['id', 'name', 'email', 'role', 'state', 'createdAt', 'updatedAt'];
@@ -37,7 +38,8 @@ const createUser = async (req, res, next) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'name, email y password son obligatorios' });
     }
-    const user = await db.orm.users.create({ name, email, password, role, state: Number(state) });
+    const hashedPassword = await bycrypt.hash(password, 10);
+    const user = await db.orm.users.create({ name, email, password: hashedPassword, role, state: Number(state) });
     res.status(201).json(sanitizeUser(user));
   } catch (error) {
     if (error?.code === 'ORM.UNIQUE_CONSTRAINT') {
