@@ -1,4 +1,5 @@
 const { db } = require('../prisma/db');
+const { hashPassword } = require('./auth.helpers');
 
 // Campos permitidos en las respuestas públicas. Nunca devolvemos contraseñas.
 const publicUserFields = ['id', 'name', 'email', 'role', 'state', 'createdAt', 'updatedAt'];
@@ -34,10 +35,14 @@ const getUser = async (req, res, next) => {
 const createUser = async (req, res, next) => {
   try {
     const { name, email, password, role = 'admin', state = 1 } = req.body;
-    if (!name || !email || !password) {
+    if (!name || !email || typeof password !== 'string') {
       return res.status(400).json({ message: 'name, email y password son obligatorios' });
     }
-    const user = await db.orm.user.create({ name, email, password, role, state: Number(state) });
+    if (password.length < 8) {
+      return res.status(400).json({ message: 'password debe tener al menos 8 caracteres' });
+    }
+    const passwordHash = await hashPassword(password);
+    const user = await db.orm.user.create({ name, email, password: passwordHash, role, state: Number(state) });
     res.status(201).json(sanitizeUser(user));
   } catch (error) {
     if (error?.code === 'ORM.UNIQUE_CONSTRAINT') {
@@ -52,8 +57,14 @@ const updateUser = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const data = {};
-    for (const field of ['name', 'email', 'password', 'role', 'state']) {
+    for (const field of ['name', 'email', 'role', 'state']) {
       if (req.body[field] !== undefined) data[field] = field === 'state' ? Number(req.body[field]) : req.body[field];
+    }
+    if (req.body.password !== undefined) {
+      if (typeof req.body.password !== 'string' || req.body.password.length < 8) {
+        return res.status(400).json({ message: 'password debe tener al menos 8 caracteres' });
+      }
+      data.password = await hashPassword(req.body.password);
     }
     if (!Object.keys(data).length) return res.status(400).json({ message: 'No hay campos para actualizar' });
     const user = await db.orm.user.where({ id }).update(data);
