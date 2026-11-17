@@ -1,4 +1,5 @@
 const dotenv = require("dotenv");
+dotenv.config({ path: ".env.development.local" });
 dotenv.config();
 
 const sqliteRuntime = require("@prisma/orm-sqlite/runtime");
