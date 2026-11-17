@@ -1,6 +1,7 @@
 const { db } = require('../prisma/db');
 const bcrypt = require('bcrypt');
 const { generateToken } = require('../utils/jwt');
+
 const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -31,6 +32,7 @@ const loginUser = async (req, res, next) => {
       updatedAt: user.updatedAt,
     };
     res.json({ token, user: publicUser });
+    console.log('Usuario logueado:', publicUser);
   } catch (error) {
     next(error);
   }
